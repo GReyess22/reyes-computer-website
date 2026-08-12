@@ -1,0 +1,60 @@
+/* REYES COMPUTER - Estilos Personalizados
+ * Modulo de Efectos de Cristaleria, Animaciones y Scroll Bar
+ */
+
+:root {
+    --bg-main: #020617;
+    --card-bg: rgba(15, 23, 42, 0.75);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --primary-cyan: #38bdf8;
+    --primary-emerald: #10b981;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: #f8fafc;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow-x: hidden;
+}
+
+/* Tarjeta con efecto Glassmorphism */
+.glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 12px 35px -10px rgba(56, 189, 248, 0.25);
+    transform: translateY(-2px);
+}
+
+/* Texto Gradiente Neón */
+.gradient-text {
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Transición suave para Tabs de Cursos */
+.tab-transition {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+/* Personalización de la Barra de Desplazamiento */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #020617;
+}
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #0284c7;
+}
