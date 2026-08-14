@@ -1,231 +1,224 @@
 /**
  * REYES COMPUTER - Módulo de Lógica y Seguridad Frontend
  * Cumplimiento de Normativa OWASP A03:2021 (Injection / XSS) & MITRE CWE-79
+ * 
+ * Este script gestiona el cambio de contenido en las pestañas de cursos,
+ * la seguridad en la captura de datos del usuario y el mensaje final.
  */
+
+// ======================================================
+// 💾 1. ESTRUCTURA DE DATOS (El Catálogo de Cursos)
+// ======================================================
 
 const cursosExcel = {
     basico: {
-        titulo: "Excel Básico - Fundamentos Prácticos",
-        descripcion: "Diseñado para usuarios que desean dominar la navegación, estructuración limpia de tablas y cálculos esenciales sin errores.",
-        puntos: [
-            "Interfaz profesional y atajos de teclado de alta velocidad",
-            "Formato de celdas, estilos y validación de datos",
-            "Fórmulas matemáticas y estadísticas básicas (SUMA, PROMEDIO, CONTAR)",
-            "Diseño e interpretación de gráficos explicativos"
-        ],
-        duracion: "12 Horas de Capacitación",
-        imagen: "https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=800&q=80"
+        titulo: "Excel Básico - Fundamentos Esenciales",
+        descripcion: "¿Eres principiante o nunca has usado Excel? Este curso te dará las bases que necesitas para manejar la hoja de cálculo con confianza. Aprenderás a organizar información, crear tablas simples y realizar cálculos fundamentales.",
+        puntos: ["Introducción a la interfaz", "Tipos de datos y formatos", "Fórmulas básicas (SUMA, PROMEDIO)", "Formato condicional"],
+        duracion: "8 Horas de Capacitación",
+        imagen: "url/a/imagen_basico.jpg" // Reemplace con su URL real
     },
     intermedio: {
         titulo: "Excel Intermedio - Análisis e Informes",
-        descripcion: "Ideal para analistas y asistentes administrativos que requieren procesar grandes volúmenes de datos con rapidez.",
-        puntos: [
-            "Funciones Búsqueda y Referencia: BUSCARX, BUSCARV e INDICE/COINCIDIR",
-            "Lógica Condicional Compleja (SI, Y, O, SUMAR.SI.CONJUNTO)",
-            "Tablas Dinámicas Avanzadas y Segmentadores de Datos",
-            "Formato Condicional con Reglas Personalizadas"
-        ],
+        descripcion: "Domina el análisis de datos y la creación de reportes dinámicos. Este curso está diseñado para usuarios que ya conocen los fundamentos y necesitan pasar al siguiente nivel profesional.",
+        puntos: ["Tablas Dinámicas (Pivot Tables)", "Funciones lógicas avanzadas (SI, Y, O)", "Búsqueda avanzada (BUSCARV/XLOOKUP)", "Gráficos profesionales"],
         duracion: "18 Horas de Capacitación",
-        imagen: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80"
+        imagen: "url/a/imagen_intermedio.jpg" // Reemplace con su URL real
     },
     avanzado: {
-        titulo: "Excel Avanzado, Dashboards & Macros",
-        descripcion: "Dirigido a gerentes y líderes técnicos que buscan automatizar tareas repetitivas y construir paneles de control ejecutivos.",
-        puntos: [
-            "Diseño e implementación de Dashboards Interactivos",
-            "Introducción a Macros y Programación en VBA (Visual Basic)",
-            "Power Query para Limpieza e Importación de Datos Externa",
-            "Modelado Financiero y Análisis de Escenarios"
-        ],
+        titulo: "Excel Avanzado - Modelización y Automatización",
+        descripcion: "El nivel maestro. Aprende a modelizar datos complejos, automatizar tareas repetitivas e interactuar con otras herramientas mediante VBA o Power Query.",
+        puntos: ["Power Query (Extracción de Datos)", "Macros y Visual Basic for Applications (VBA)", "Solver para optimización", "Modelos financieros avanzados"],
         duracion: "24 Horas de Capacitación",
-        imagen: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
+        imagen: "url/a/imagen_avanzado.jpg" // Reemplace con su URL real
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inicialización de Menú Móvil
-    const btnMenu = document.getElementById('btn-menu-mobile');
-    const menu = document.getElementById('menu-mobile');
-    if (btnMenu && menu) {
-        btnMenu.addEventListener('click', () => {
-            menu.classList.toggle('hidden');
-        });
-
-        document.querySelectorAll('.mobile-link').forEach(link => {
-            link.addEventListener('click', () => {
-                menu.classList.add('hidden');
-            });
-        });
-    }
-
-    // 2. Inicialización de Tabs de Excel
-    cambiarTabExcel('intermedio');
-
-    // 3. Manejo del Formulario de Contacto
-    const formContacto = document.getElementById('form-contacto');
-
-    if (formContacto) {
-        formContacto.addEventListener('submit', (event) => {
-            event.preventDefault();
-
-            // Captura segura de variables
-            const nombreRaw = document.getElementById('nombre')?.value || '';
-            const correoRaw = document.getElementById('correo')?.value || '';
-            const interesRaw = document.getElementById('interes')?.value || '';
-            const mensajeRaw = document.getElementById('mensaje')?.value || '';
-
-            // Sanitización estricta mediante Escape HTML (OWASP)
-            const nombreSanitizado = escapeHTML(nombreRaw.trim());
-            const correoSanitizado = escapeHTML(correoRaw.trim());
-            const interesSanitizado = escapeHTML(interesRaw.trim());
-            const mensajeSanitizado = escapeHTML(mensajeRaw.trim());
-
-            // Renderizado seguro en el DOM
-            mostrarRespuestaExitosa(nombreSanitizado, correoSanitizado, interesSanitizado);
-
-            // Limpieza tras envío
-            formContacto.reset();
-        });
-    }
-});
+// ======================================================
+// 🛡️ 2. UTILIDAD DE SEGURIDAD (Sanitización XSS)
+// ======================================================
 
 /**
- * Cambia dinámicamente el contenido de los cursos de Excel con nodos DOM seguros
- */
-function cambiarTabExcel(nivel) {
-    const data = cursosExcel[nivel];
-    if (!data) return;
-
-    ['basico', 'intermedio', 'avanzado'].forEach(n => {
-        const btn = document.getElementById(`tab-${n}`);
-        if (btn) {
-            btn.className = (n === nivel) 
-                ? "px-6 py-2.5 rounded-xl text-sm font-bold transition-all bg-emerald-500 text-slate-950 shadow-md"
-                : "px-6 py-2.5 rounded-xl text-sm font-bold transition-all text-slate-400 hover:text-white";
-        }
-    });
-
-    const contenedor = document.getElementById('content-excel');
-    if (!contenedor) return;
-    
-    contenedor.textContent = ''; // Limpieza previa transparente
-
-    const badge = document.createElement('span');
-    badge.className = "text-xs font-bold uppercase tracking-widest text-emerald-400";
-    badge.textContent = data.duracion;
-
-    const titulo = document.createElement('h3');
-    titulo.className = "text-2xl font-bold text-white mt-1 mb-3";
-    titulo.textContent = data.titulo;
-
-    const desc = document.createElement('p');
-    desc.className = "text-slate-300 text-sm leading-relaxed mb-6";
-    desc.textContent = data.descripcion;
-
-    const ul = document.createElement('ul');
-    ul.className = "space-y-3 text-sm text-slate-200 mb-8";
-
-    data.puntos.forEach(p => {
-        const li = document.createElement('li');
-        li.className = "flex items-start gap-2.5";
-        
-        const icon = document.createElement('i');
-        icon.className = "fas fa-check-circle text-emerald-400 mt-1";
-        
-        const span = document.createElement('span');
-        span.textContent = p;
-
-        li.appendChild(icon);
-        li.appendChild(span);
-        ul.appendChild(li);
-    });
-
-    const btnContainer = document.createElement('div');
-    btnContainer.className = "flex flex-wrap gap-4";
-
-    const btnWsp = document.createElement('a');
-    btnWsp.href = `https://wa.me/8096021991?text=Hola,%20deseo%20inscribirme%20o%20cotizar%20el%20curso:%20${encodeURIComponent(data.titulo)}`;
-    btnWsp.target = "_blank";
-    btnWsp.className = "px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all inline-flex items-center gap-2";
-    
-    const iconWsp = document.createElement('i');
-    iconWsp.className = "fab fa-whatsapp text-lg";
-    
-    const txtWsp = document.createTextNode(" Inscripción / Cotización");
-
-    btnWsp.appendChild(iconWsp);
-    btnWsp.appendChild(txtWsp);
-    btnContainer.appendChild(btnWsp);
-
-    contenedor.appendChild(badge);
-    contenedor.appendChild(titulo);
-    contenedor.appendChild(desc);
-    contenedor.appendChild(ul);
-    contenedor.appendChild(btnContainer);
-
-    const img = document.getElementById('img-excel');
-    if (img) {
-        img.style.opacity = '0';
-        setTimeout(() => {
-            img.src = data.imagen;
-            img.style.opacity = '1';
-        }, 200);
-    }
-}
-
-/**
- * Asigna el valor al select de contacto y desplaza la vista
- */
-function abrirModalServicio(servicio) {
-    const selectServicio = document.getElementById('interes');
-    if (selectServicio) {
-        for (let option of selectServicio.options) {
-            if (option.value.toLowerCase().includes(servicio.toLowerCase())) {
-                option.selected = true;
-                break;
-            }
-        }
-    }
-    const secContacto = document.getElementById('contacto');
-    if (secContacto) {
-        secContacto.scrollIntoView({ behavior: 'smooth' });
-    }
-}
-
-/**
- * Escape de Caracteres Especiales HTML (Mitigación OWASP Injection / XSS)
+ * Escapa caracteres HTML en una cadena de texto para prevenir ataques XSS.
+ * Esto es CRÍTICO antes de inyectar cualquier dato proveniente del usuario en el DOM.
+ * @param {string} str - La cadena a sanitizar.
+ * @returns {string} La cadena segura.
  */
 function escapeHTML(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/\//g, '&#x2F;');
+    if (typeof str !== 'string') return '';
+    return str.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;')
+               .replace(/"/g, '&quot;')
+               .replace(/'/g, '&#039;');
 }
 
+// ======================================================
+// 🖼️ 3. MANEJO DE VISTAS (Cambio de Pestañas)
+// ======================================================
+
 /**
- * Muestra el mensaje de respuesta evitando vulnerabilidades XSS
+ * Llena el contenido principal de la página con los detalles del curso seleccionado.
+ * @param {string} nivel - La clave del curso ('basico', 'intermedio', 'avanzado').
+ */
+function cambiarTabExcel(nivel) {
+    const cursos = cursosExcel[nivel];
+    if (!cursos) return;
+
+    const contentDiv = document.getElementById('content-excel');
+    const tabButtons = document.querySelectorAll('.tab-button');
+
+    // 1. Actualizar el estado de los botones (UX)
+    tabButtons.forEach(btn => {
+        btn.classList.remove('bg-emerald-600', 'text-white');
+        btn.classList.add('bg-slate-700', 'text-slate-300');
+    });
+    document.getElementById(`button-${nivel}`).classList.add('bg-emerald-600', 'text-white');
+    document.getElementById(`button-${nivel}`).classList.remove('bg-slate-700', 'text-slate-300');
+
+
+    // 2. Construir el contenido HTML dinámicamente
+    let puntosHtml = cursos.puntos.map(punto => `<li>${punto}</li>`).join('');
+
+    const contentHTML = `
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Columna de Imagen -->
+            <div class="md:w-1/3">
+                <img src="${cursos.imagen}" alt="${cursos.titulo}" class="rounded-lg shadow-xl w-full object-cover transform transition duration-500 hover:scale-[1.02]">
+            </div>
+            <!-- Columna de Descripción -->
+            <div class="md:w-2/3">
+                <h2 class="text-4xl font-extrabold text-slate-900 mb-4">${cursos.titulo}</h2>
+                <p class="text-xl text-slate-700 mb-6">${cursos.descripcion}</p>
+
+                <!-- Puntos Clave -->
+                <div class="mb-8">
+                    <h3 class="text-2xl font-semibold border-b pb-2 text-emerald-600 mb-4">Temario Principal:</h3>
+                    <ul class="space-y-2 list-none pl-0 text-lg text-slate-600">
+                        ${puntosHtml}
+                    </ul>
+                </div>
+
+                <!-- Duración y CTA -->
+                <div class="flex justify-between items-center bg-emerald-50 p-4 rounded-lg shadow-inner mt-6">
+                    <span class="text-xl font-medium text-slate-800">${cursos.duracion}</span>
+                    <button id="whatsapp-cta" 
+                            class="flex items-center bg-green-500 hover:bg-green-600 text-white py-2 px-6 rounded-full transition duration-300 shadow-lg">
+                        <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M19.43 12.84c-.45-1.93-2.73-3.17-5.05-3.17-2.32 0-4.6.8-5.05 3.17l.55 2.44 5.13 2.3zM19 3v10h-3l-4-4-4 4H7V3h3l4 4 4-4h3z"/></svg>
+                        Consulta por WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 3. Inyectar el contenido y aplicar la transición suave (Clase CSS)
+    contentDiv.innerHTML = contentHTML;
+    contentDiv.classList.add('tab-transition'); // Aplicamos la clase de transición definida en CSS
+}
+
+
+// ======================================================
+// ✅ 4. MANEJO DE FORMULARIO Y RESPUESTA EXITOSA (Seguro)
+// ======================================================
+
+/**
+ * Muestra el mensaje de respuesta evitando vulnerabilidades XSS.
+ * UTILIZA textContent para garantizar que los datos sean tratados como texto puro, no HTML ejecutable.
+ * @param {string} nombre - Nombre del usuario.
+ * @param {string} correo - Correo electrónico del usuario.
+ * @param {string} interes - Nivel de interés (ej: 'Intermedio').
  */
 function mostrarRespuestaExitosa(nombre, correo, interes) {
     const contenedor = document.getElementById('mensaje-respuesta');
     if (!contenedor) return;
     
+    // Limpiar contenido previo
     contenedor.textContent = ''; 
 
+    // Creación segura de elementos (usando textContent para prevenir XSS)
     const titulo = document.createElement('strong');
     titulo.className = 'block font-bold text-emerald-300 text-base mb-1';
+    // Uso seguro: se escapa el nombre antes de usarlo en el texto
     titulo.textContent = `¡Gracias, ${nombre}! Tu solicitud ha sido recibida de manera segura.`;
 
     const detalle = document.createElement('p');
     detalle.className = 'mt-1 text-slate-200';
+    // Uso seguro: se escapa el correo e interés
     detalle.textContent = `Nos pondremos en contacto con usted al correo (${correo}) para brindarle los detalles del servicio seleccionado: [${interes}].`;
 
     contenedor.appendChild(titulo);
     contenedor.appendChild(detalle);
-    contenedor.classList.remove('hidden');
+    container.classList.remove('hidden'); // Mostrar el contenedor de mensaje
 
-    contenedor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Desplazamiento suave a la notificación
+    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+
+// ======================================================
+// 🚀 5. INICIALIZACIÓN Y EVENT LISTENERS
+// ======================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // A) Inicialización del Tab de Cursos (Se carga el nivel Básico por defecto)
+    cambiarTabExcel('basico');
+
+    const tabButtonsContainer = document.getElementById('tab-buttons');
+    if (tabButtonsContainer) {
+        tabButtonsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab-button')) {
+                // Obtener el nivel del botón clickeado (ej: 'basico')
+                const nivel = e.target.id.replace('button-', ''); 
+                cambiarTabExcel(nivel);
+            }
+        });
+    }
+
+    // B) Manejo de Envío del Formulario
+    document.getElementById('formContacto')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const form = e.target;
+        
+        // 1. Capturar datos (usando valores sanitizados para la función de éxito)
+        const nombreRaw = form.elements['nombre'].value;
+        const correoRaw = form.elements['correo'].value;
+        let interesRaw = '';
+
+        // Identificar el nivel de interés basado en el tab activo
+        const activeTab = document.querySelector('.tab-button.bg-emerald-600');
+        if (activeTab) {
+             interesRaw = activeTab.id.replace('button-', '').toUpperCase();
+        } else {
+            interesRaw = "Nivel de interés no especificado";
+        }
+
+        // 2. *** SEGURIDAD CRÍTICA: Sanitizar los inputs ***
+        const nombreSanitizado = escapeHTML(nombreRaw);
+        const correoSanitizado = escapeHTML(correoRaw);
+        // Interes se maneja con el texto puro, ya que proviene de una estructura controlada
+
+        /* 
+         * En un entorno real: Aquí iría la llamada AJAX/fetch a su API. 
+         * Ejemplo: fetch('/api/contacto', { method: 'POST', body: JSON.stringify({nombreSanitizado, correoSanitizado, interesRaw}) })
+         */
+
+        // Simulamos el éxito de la petición al backend y mostramos la respuesta segura
+        mostrarRespuestaExitosa(nombreSanitizado, correoSanitizado, interesRaw); 
+    });
+
+
+     // C) Manejo del WhatsApp CTA (Opcional: Abrir en una nueva pestaña con un mensaje predefinido)
+    document.getElementById('whatsapp-cta')?.addEventListener('click', () => {
+        const activo = document.querySelector('.tab-button.bg-emerald-600');
+        if (!activo) return;
+
+        let textoMensaje = `Hola, estoy interesado en el curso ${activo.id} (${activo.textContent}). ¿Podrían darme más detalles sobre costos y fechas?`;
+        const urlWhatsApp = `https://wa.me/8096021991?message=${encodeURIComponent(textoMensaje)}`;
+
+        window.open(urlWhatsApp, '_blank');
+    });
+});
+ 
